@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Jupyter
+.ipynb_checkpoints
+*-checkpoint.ipynb
+
+# Environment
+.env
+.venv
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local scratch
+scratch/
+*.log
+
+# Large outputs (GEE assets live remotely; only metadata sidecars are local)
+experiments/asset_metadata/*.json
+!experiments/asset_metadata/.gitkeep

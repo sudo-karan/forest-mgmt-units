@@ -1,121 +1,57 @@
-# ============================================================
-# Sanjay Van, Delhi — pipeline configuration
-# ============================================================
+# =========================================================================
+# Config for Sanjay Van, Delhi
+# Mirrors the CONFIG dict from the baseline notebook exactly.
+# This is the ONLY file you edit when switching ROIs.
+# =========================================================================
 
 # --- Identity ---
 roi_name: "Sanjay Van, Delhi"
-roi_slug: "sanjay_van"           # used in asset names, must be filesystem-safe
 project_id: "replicating-paper"
 
-# --- ROI geometry ---
-# [west, south, east, north] for rectangles
-# For real study sites, switch to geometry_type: polygon with coords list
-geometry_type: "rectangle"
+# --- ROI (rectangle; replace with polygon coords for real ROIs) ---
+# [west, south, east, north]
 roi_bounds: [77.16, 28.51, 77.19, 28.55]
 
-# Buffer used for VIIRS threshold calculation (degrees)
-roi_buffer_deg: 0.05
-
 # --- Time windows ---
+# Phenology (HLS): 10-year window. Update pheno_end each year.
 pheno_start: "2013-01-01"
 pheno_end:   "2024-12-31"
 
-radar_start: "2014-04-01"        # S1A launch
+# Radar (S1): same long window
+radar_start: "2014-04-01"   # S1A launched April 2014
 radar_end:   "2024-12-31"
 
-# --- Sentinel-2 seasonal composites ---
+# S2 composites for SNIC: single recent year, 4 seasons
+# Each season: [name, start_MMDD, end_MMDD]
 s2_year: 2023
 s2_seasons:
-  - name: "winter"
-    start_mmdd: "11-01"
-    end_mmdd:   "01-31"
-    wraps_year: true             # explicit, no hidden logic
-  - name: "pre_monsoon"
-    start_mmdd: "03-01"
-    end_mmdd:   "05-31"
-    wraps_year: false
-  - name: "monsoon"
-    start_mmdd: "06-15"
-    end_mmdd:   "09-15"
-    wraps_year: false
-  - name: "post_monsoon"
-    start_mmdd: "09-16"
-    end_mmdd:   "10-31"
-    wraps_year: false
+  - ["winter",       "11-01", "01-31"]
+  - ["pre_monsoon",  "03-01", "05-31"]
+  - ["monsoon",      "06-15", "09-15"]
+  - ["post_monsoon", "09-16", "10-31"]
 
 # --- Resolution ---
-analysis_scale: 10               # meters; raise for ROIs > 1000 km²
+# 10m for ROIs <= 1000 km^2; increase for larger ROIs.
+analysis_scale: 10
 
-# --- Masking ---
-masking:
-  use_worldcover: true
-  worldcover_classes: [10, 20, 30]   # trees, shrubland, grassland
+# --- Masking thresholds ---
+cloud_pct_max: 20  # Max scene cloud % for S2/HLS pre-filter
+# VIIRS: percentile-based, computed in masking.py — no hard-coded value.
 
-  use_jrc_water: true
+# --- SNIC ---
+# seed_spacing auto-scales to target ~5000 stands (in aggregation.py)
+snic_compactness:    0.4
+snic_connectivity:   8
+snic_neighborhood:   128
+snic_target_stands:  5000
 
-  use_viirs: true
-  viirs_percentile: 95             # p95 of buffered ROI
-  viirs_floor: 1.5                 # minimum threshold, nW/cm²/sr
+# --- Phenology (HLS dual harmonic) ---
+n_curve_samples:  24   # Points sampled from fitted curve per year
+n_pca_components: 5    # PCA reduction of 24 phenology features
 
-  # Reserved for when you add Dynamic World (point 4 from mentor)
-  use_dynamic_world: false
-  dw_prob_threshold: 0.6           # P(trees) minimum
-  dw_min_fraction: 0.8             # fraction of valid DW obs that must be "trees"
+# --- Clustering ---
+k_range:      [2, 15]   # Range tested for auto-K selection
+k_sample_pts: 1500      # Points sampled for silhouette/DB scoring
 
-# --- Phenology (Module 2) ---
-phenology:
-  source: "hls"                    # "hls" | "s2_harmonized" | "s2_raw"
-                                   # lets you swap per the mentor's point 3
-  vegetation_index: "nirv"         # "nirv" | "ndvi" | "evi"
-  harmonic_order: 2                # 1 = annual only, 2 = annual + semi-annual
-  n_curve_samples: 24
-  n_pca_components: 5
-  include_trend: true              # β1 as separate feature
-
-# --- Radar (Module 3) ---
-radar:
-  source: "s1_grd"
-  polarization_feature: "vh_vv_ratio"
-  percentiles: [10, 90]
-  include_stddev: true
-
-# --- Static layers (Module 4) ---
-static:
-  canopy_source: "lang_2023"       # "lang_2023" | "gedi" (future)
-  canopy_asset: "users/nlang/ETH_GlobalCanopyHeight_2020_10m_v1"
-  dem_source: "nasadem"
-  include_elevation: true
-  include_slope: true
-  include_aspect: false            # easy addition later
-
-# --- S2 composites for SNIC (Module 5) ---
-s2_composites:
-  cloud_pct_max: 20
-  bands: ["B2", "B3", "B4", "B8", "B11", "B12"]
-  use_scl_mask: true
-
-# --- SNIC segmentation (Module 8) ---
-snic:
-  compactness: 0.4
-  connectivity: 8
-  neighborhood_size: 128
-  target_stands: 5000              # seed spacing auto-computed from this
-
-# --- Clustering (Module 11) ---
-clustering:
-  algorithm: "kmeans"              # "kmeans" | "gmm" | "hdbscan" (future)
-  k_range: [2, 15]
-  k_sample_pts: 1500
-  k_selection_metric: "silhouette" # "silhouette" | "davies_bouldin" | "consensus"
-  random_seed: 42
-
-# --- Export / assets ---
-assets:
-  base_path: "projects/replicating-paper/assets/"
-  version: "v1"                    # bump when pipeline changes meaningfully
-  overwrite: false                 # safety flag — force explicit re-export
-
-# --- Metadata (auto-filled by pipeline, don't set by hand) ---
-# git_hash: ""
-# generated_at: ""
-# pipeline_version: ""
+# --- Export ---
+export_asset_base: "projects/replicating-paper/assets/"
